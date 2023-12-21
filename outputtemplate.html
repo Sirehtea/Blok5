@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table, th, td {
+            border: 1px solid white;
+            text-align: center;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Plagiaatdetectie</h2>
+    <table>
+        <tr>
+            <th>Combinatie</th>
+            <th>student_1</th>
+            <th>student_2</th>
+            <th>student_3</th>
+        </tr>
+        {% for auteur1, opmerkingen in matrix_opmerkingen.items() %}
+            <tr>
+                <td>{{ alias_mapping[auteur1] }}</td>
+                {% for auteur2, opmerking in opmerkingen.items() %}
+                    <td>{{ "/".join(opmerking) if opmerking else "/" }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
