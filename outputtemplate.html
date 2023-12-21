@@ -30,17 +30,21 @@
             {% endfor %}
         </tr>
         {% for author1, opmerkingen in matrix_opmerkingen.items() %}
-            <tr>
-                <td>{{ author1 }}</td>
-                {% for author2, opmerking in opmerkingen.items() %}
-                    {% if author1 != author2 and not matrix_opmerkingen[author2][author1] %}
-                        <td>{{ " & ".join(opmerking) if opmerking else "" }}</td>
-                    {% else %}
-                        <td>/</td>
-                    {% endif %}
-                {% endfor %}
-            </tr>
+    <tr>
+        <td>{{ author1 }}</td>
+        {% for author2, opmerking in opmerkingen.items() %}
+            {% if author1 != author2 and not matrix_opmerkingen[author2][author1] %}
+                <td>
+                    {% for item in opmerking %}
+                        {{ item|join(" & ") }}<br>
+                    {% endfor %}
+                </td>
+            {% else %}
+                <td>/</td>
+            {% endif %}
         {% endfor %}
+    </tr>
+{% endfor %}
     </table>
 </body>
 </html>
