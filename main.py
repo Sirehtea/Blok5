@@ -2,8 +2,25 @@ import os
 import filecmp
 import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from libcst import parse_module, CSTVisitor, SimpleString, Name
+from libcst import parse_module, CSTVisitor, SimpleString, Name, CSTNode, RemoveFromParent
 from spellchecker import SpellChecker
+
+class RemoveCommentsTransformer(CSTVisitor):
+    def leave_comment(self, original_node: CSTNode, updated_node: CSTNode) -> CSTNode:
+        # verwijder comments door deze te verwijderen van de CST door het teruggeven van RemoveFromParent
+        return RemoveFromParent()
+
+def remove_comments_from_code(code):
+    module = parse_module(code)
+    transformer = RemoveCommentsTransformer()
+    return module.visit(transformer).code
+
+def compare_csts_after_removing_comments(code1, code2):
+    code1_without_comments = remove_comments_from_code(code1)
+    code2_without_comments = remove_comments_from_code(code2)
+
+    # vergelijk de CST's na het verwijderen van comments
+    return code1_without_comments == code2_without_comments
 
 def compare_files(path1, path2):
     return filecmp.cmp(path1, path2)
@@ -47,6 +64,12 @@ def build_matrix(directory):
                 file1_path = os.path.join(directory, author1, os.listdir(os.path.join(directory, author1))[0])
                 file2_path = os.path.join(directory, author2, os.listdir(os.path.join(directory, author2))[0])
 
+                with open(file1_path, "r") as file1:
+                    code1 = file1.read()
+
+                with open(file2_path, "r") as file2:
+                    code2 = file2.read()
+
                 if os.path.basename(file1_path) == os.path.basename(file2_path) and compare_files(file1_path, file2_path):
                     matrix_opmerkingen[author1][author2].append("identieke file en naam " + os.path.basename(file1_path))
                 elif os.path.basename(file1_path) == os.path.basename(file2_path):
@@ -72,8 +95,10 @@ def build_matrix(directory):
                 if identical_misspelled_words:
                     matrix_opmerkingen[author1][author2].append("identieke spelfouten: " + ", ".join(identical_misspelled_words))
 
+                if compare_csts_after_removing_comments(code1, code2):
+                    matrix_opmerkingen[author1][author2].append("identieke CST na verwijderen comments " + os.path.basename(file1_path))
 
-    return authors, matrix_opmerkingen
+        return authors, matrix_opmerkingen
 
 def generate_html_output(authors, matrix_opmerkingen, output_filename):
     env = Environment(
