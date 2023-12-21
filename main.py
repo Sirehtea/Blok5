@@ -4,6 +4,7 @@ import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from libcst import parse_module, CSTVisitor, SimpleString, Name, CSTNode, RemoveFromParent
 from spellchecker import SpellChecker
+import ast
 
 class RemoveCommentsTransformer(CSTVisitor):
     def leave_comment(self, original_node: CSTNode, updated_node: CSTNode) -> CSTNode:
@@ -82,8 +83,12 @@ def compare_files_and_syntax_trees(file1_path, file2_path, spell_checker):
     if identical_misspelled_words:
         comparison_results.append("identieke spelfouten: " + ", ".join(identical_misspelled_words))
 
-    if compare_csts_after_removing_comments(code1, code2):
-        comparison_results.append("identieke CST na verwijderen comments " + os.path.basename(file1_path))
+    # vergelijk AST's
+    ast1 = ast.parse(code1)
+    ast2 = ast.parse(code2)
+
+    if ast.dump(ast1) == ast.dump(ast2):
+        comparison_results.append("identieke AST")
 
     return comparison_results if comparison_results else None
 
