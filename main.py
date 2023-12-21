@@ -1,9 +1,16 @@
 import os
 import filecmp
+import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 def compare_files(path1, path2):
     return filecmp.cmp(path1, path2)
+
+def extract_comments(file_path): #reguliere expressie om single-line comments te vinden
+    with open(file_path, "r",) as file:
+        content = file.read()
+        comments = re.findall(r'#(.+?)(?=\n|$)', content)
+        return comments
 
 def should_compare(author1, author2, matrix_opmerkingen):
     return author1 != author2 and not matrix_opmerkingen[author2][author1]
@@ -15,15 +22,22 @@ def build_matrix(directory):
     for i, author1 in enumerate(authors):
         for j, author2 in enumerate(authors):
             if should_compare(author1, author2, matrix_opmerkingen):
-                file1 = os.path.join(directory, author1, os.listdir(os.path.join(directory, author1))[0])
-                file2 = os.path.join(directory, author2, os.listdir(os.path.join(directory, author2))[0])
+                file1_path = os.path.join(directory, author1, os.listdir(os.path.join(directory, author1))[0])
+                file2_path = os.path.join(directory, author2, os.listdir(os.path.join(directory, author2))[0])
 
-                if os.path.basename(file1) == os.path.basename(file2) and compare_files(file1, file2):
-                    matrix_opmerkingen[author1][author2].append("identieke file en naam " + os.path.basename(file1))
-                elif os.path.basename(file1) == os.path.basename(file2):
-                    matrix_opmerkingen[author1][author2].append("identieke naam " + os.path.basename(file1))
-                elif compare_files(file1, file2):
-                    matrix_opmerkingen[author1][author2].append("identieke file " + os.path.basename(file1))
+                if os.path.basename(file1_path) == os.path.basename(file2_path) and compare_files(file1_path, file2_path):
+                    matrix_opmerkingen[author1][author2].append("identieke file en naam " + os.path.basename(file1_path))
+                elif os.path.basename(file1_path) == os.path.basename(file2_path):
+                    matrix_opmerkingen[author1][author2].append("identieke naam " + os.path.basename(file1_path))
+                elif compare_files(file1_path, file2_path):
+                    matrix_opmerkingen[author1][author2].append("identieke file " + os.path.basename(file1_path))
+
+                comments1 = extract_comments(file1_path)
+                comments2 = extract_comments(file2_path)
+                identical_comments = set(comments1) & set(comments2)
+
+                if identical_comments:
+                    matrix_opmerkingen[author1][author2].append("identieke comments: " + ", ".join(identical_comments))
 
     return authors, matrix_opmerkingen
 
