@@ -2,15 +2,35 @@ import os
 import filecmp
 import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from libcst import parse_module, CSTVisitor, SimpleString, Name
+from spellchecker import SpellChecker
 
 def compare_files(path1, path2):
     return filecmp.cmp(path1, path2)
 
-def extract_comments(file_path): #reguliere expressie om single-line comments te vinden
-    with open(file_path, "r",) as file:
+def extract_comments(file_path):
+    with open(file_path, "r") as file:
         content = file.read()
         comments = re.findall(r'#(.+?)(?=\n|$)', content)
         return comments
+
+class LexiconCollector(CSTVisitor):
+    def __init__(self):
+        self.lexicon = set()
+
+    def visit_simple_string(self, node: SimpleString) -> None:
+        self.lexicon.update(node.value.split())
+
+    def visit_name(self, node: Name) -> None:
+        self.lexicon.add(node.value)
+
+def collect_lexicon(file_path):
+    with open(file_path, "r") as file:
+        code = file.read()
+        module = parse_module(code)
+        lexicon_collector = LexiconCollector()
+        module.visit(lexicon_collector)
+        return lexicon_collector.lexicon
 
 def should_compare(author1, author2, matrix_opmerkingen):
     return author1 != author2 and not matrix_opmerkingen[author2][author1]
@@ -18,6 +38,8 @@ def should_compare(author1, author2, matrix_opmerkingen):
 def build_matrix(directory):
     authors = sorted(os.listdir(directory))
     matrix_opmerkingen = {author: {other_author: [] for other_author in authors} for author in authors}
+
+    spell_checker = SpellChecker()
 
     for i, author1 in enumerate(authors):
         for j, author2 in enumerate(authors):
@@ -38,6 +60,18 @@ def build_matrix(directory):
 
                 if identical_comments:
                     matrix_opmerkingen[author1][author2].append("identieke comments: " + ", ".join(identical_comments))
+
+                lexicon1 = collect_lexicon(file1_path)
+                lexicon2 = collect_lexicon(file2_path)
+
+                misspelled_words1 = spell_checker.unknown(lexicon1)
+                misspelled_words2 = spell_checker.unknown(lexicon2)
+
+                identical_misspelled_words = set(misspelled_words1) & set(misspelled_words2)
+
+                if identical_misspelled_words:
+                    matrix_opmerkingen[author1][author2].append("identieke spelfouten: " + ", ".join(identical_misspelled_words))
+
 
     return authors, matrix_opmerkingen
 
