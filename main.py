@@ -63,7 +63,7 @@ def compare_files_and_syntax_trees(file1_path, file2_path, spell_checker):
         code2 = file2.read()
 
     if compare_files(file1_path, file2_path):
-        comparison_results.append("identieke file " + os.path.basename(file1_path))
+        comparison_results.append("identieke file: " + os.path.basename(file1_path))
 
     comments1 = extract_comments(file1_path)
     comments2 = extract_comments(file2_path)

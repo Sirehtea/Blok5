@@ -3,48 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            background-color: black;
-            color: white;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        table, th, td {
-            border: 1px solid white;
-            text-align: center;
-            padding: 8px;
-        }
-    </style>
+    <title>Plagiaatdetectie</title>
+    <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
-    <h2>Plagiaatdetectie</h2>
-    <table>
-        <tr>
-            <th>Combinatie</th>
-            {% for author1, opmerkingen in matrix_opmerkingen.items() %}
-                <th>{{ author1 }}</th>
-            {% endfor %}
-        </tr>
-        {% for author1, opmerkingen in matrix_opmerkingen.items() %}
-    <tr>
-        <td>{{ author1 }}</td>
-        {% for author2, opmerking in opmerkingen.items() %}
-            {% if author1 != author2 and not matrix_opmerkingen[author2][author1] %}
-                <td>
-                    {% for item in opmerking %}
-                        {{ item|join(" & ") }}<br>
+    <div class="container">
+        <h2>Plagiaatdetectie</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Combinatie</th>
+                        {% for author1, opmerkingen in matrix_opmerkingen.items() %}
+                            <th>{{ author1 }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for author1, opmerkingen in matrix_opmerkingen.items() %}
+                        <tr>
+                            <td class="author">{{ author1 }}</td>
+                            {% for author2, opmerking in opmerkingen.items() %}
+                                {% if author1 != author2 and not matrix_opmerkingen[author2][author1] %}
+                                    <td>
+                                        {% for item in opmerking %}
+                                            <span class="match">{{ item|join(" & ") }}</span><br>
+                                        {% endfor %}
+                                    </td>
+                                {% else %}
+                                    <td class="no-match">-</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
                     {% endfor %}
-                </td>
-            {% else %}
-                <td>/</td>
-            {% endif %}
-        {% endfor %}
-    </tr>
-{% endfor %}
-    </table>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
